@@ -6,14 +6,14 @@ Peamine klass on:
 
 - `RuleBasedNerCorrectionTagger`
 
-Sisendiks ootab tagger `Text` objekti, millel on:
+Tagger eeldab `Text` objekti, millel on olemas:
 
 - NER-kiht
-- morfoloogia kiht
-- süntaksi kiht
+- morfoloogiakiht
+- süntaksikiht
 - `words` kiht
 
-Näide:
+## Lihtne kasutus
 
 ```python
 from rule_based_ner_correction import RuleBasedNerCorrectionTagger
@@ -27,13 +27,43 @@ tagger = RuleBasedNerCorrectionTagger(
 tagger.tag(text)
 ```
 
-Parandatud NER-kiht lisatakse samale `Text` objektile tagasi.
+Parandatud NER-kiht lisatakse samale `Text` objektile.
 
-Olulisemad failid:
+## Reeglite etteandmine
 
-- `boundary/` reeglid, mis parandavad olemasolevate nimeüksuste piire või silte
-- `missing/` reeglid, mis lisavad puuduvaid nimeüksusi
-- `visualizer/` joonistab süntaksipuu koos soovitavate kihtidega
-- `kuidas_reegleid_teha.md` selgitab, kuidas uut reeglit kirjutada
-- `testi_reeglit.ipynb` aitab uut reeglit katsetada
-- `testimine.py` notebooki abifunktsioonid
+Taggerile võib anda kõik reeglid ühe listina:
+
+```python
+from rule_based_ner_correction import RuleBasedNerCorrectionTagger, get_default_rules
+
+rules = get_default_rules()
+tagger = RuleBasedNerCorrectionTagger(rules=rules)
+```
+
+Tagger jagab reeglid ise faaside järgi nelja rühma:
+
+- `split`
+- `adjust`
+- `finalize`
+- `missing`
+
+Kui reegleid ette ei anta, kasutatakse sama vaikimisi komplekti automaatselt.
+
+## Tööjärjekord
+
+Parandused tehakse neljas etapis:
+
+1. `split` – vigase span’i jagamine
+2. `adjust` – span’i laiendamine või kärpimine
+3. `finalize` – viimased ümbermärgistused ja eemaldused
+4. `missing` – puuduva nimeüksuse lisamine
+
+## Olulisemad failid
+
+- `boundary/` – olemasolevaid nimeüksusi muutvad reeglid
+- `missing/` – puuduvaid nimeüksusi lisavad reeglid
+- `registry.py` – vaikimisi reeglid ja reeglite jaotus faaside järgi
+- `visualizer/` – süntaksipuu joonistamine koos valitud kihtidega
+- `kuidas_reegleid_teha.md` – lühike juhend uue reegli kirjutamiseks
+- `testi_reeglit.ipynb` – ühe reegli eraldi katsetamine
+- `reegli_testimine.py` – notebooki abifunktsioonid

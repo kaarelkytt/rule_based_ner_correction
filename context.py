@@ -8,8 +8,6 @@ NAME_LIKE_POS = {"H", "S", "A", "Y"}
 def resolve_morph_layer(syntax_layer="stanza_syntax", morph_layer=None):
     if morph_layer is not None:
         return morph_layer
-    if syntax_layer == "stanza_ensemble_syntax":
-        return "morph_extended"
     return "morph_analysis"
 
 
@@ -109,6 +107,25 @@ class TextContext:
     def span_from_indices(self, label, start_i, end_i):
         return SpanView(label=label, start_i=start_i, end_i=end_i, tokens=self.tokens[start_i:end_i])
 
+    def _annotation_label(self, annotation):
+        label = getattr(annotation, "nertag", None)
+        if isinstance(label, list):
+            return label[0] if label else None
+        if label is not None:
+            return label
+
+        annotations = getattr(annotation, "annotations", None)
+        if annotations:
+            first = annotations[0]
+            if isinstance(first, dict):
+                return first.get("nertag")
+            if hasattr(first, "__getitem__"):
+                try:
+                    return first["nertag"]
+                except Exception:
+                    return None
+        return None
+
     def span_from_annotation(self, annotation):
         inside = [
             token.index for token in self.tokens
@@ -116,9 +133,7 @@ class TextContext:
         ]
         if not inside:
             return None
-        label = getattr(annotation, "nertag", None)
-        if isinstance(label, list):
-            label = label[0] if label else None
+        label = self._annotation_label(annotation)
         return self.span_from_indices(label, inside[0], inside[-1] + 1)
 
     def prev_token(self, span):

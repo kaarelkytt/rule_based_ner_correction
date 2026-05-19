@@ -39,8 +39,8 @@ def _valid_next_token(token):
 
 
 class SplitDisconnectedOrgTreeRule(BaseSplitDisconnectedEntityTreeRule):
-    rule_id = "poolita_mittesidus_org_puu"
-    description = "Poolitab mittesidusa ORG nimeüksuse."
+    rule_id = "lahuta_mittesidus_org_puu"
+    description = "Lahutab mittesidusa ORG nimeüksuse."
 
     LABEL = "ORG"
     SCORE = 0.95
@@ -63,7 +63,7 @@ class SplitDisconnectedOrgTreeRule(BaseSplitDisconnectedEntityTreeRule):
 
 
 class TrimQuotedNameRule(BaseRule):
-    rule_id = "eemalda_org_jutumärgid"
+    rule_id = "kahanda_org_jutumärgid"
     description = "Eemaldab ORG märgendi ümbert jutumärgid."
 
     def applies_to(self, span, context):
@@ -106,8 +106,8 @@ class ExpandRightGoverningBodyRule(BaseRule):
 
 
 class ExpandLeftCompanyPrefixRule(BaseRule):
-    rule_id = "laienda_org_vasakule_ettevõte"
-    description = "Laiendab ORG märgendit vasakule üle ettevõtte tüübi."
+    rule_id = "laienda_org_vasakule_firmavorm"
+    description = "Laiendab ORG märgendit vasakule üle firmavormi alguse."
 
     COMPANY_PREFIX_TEXTS = {"AS", "OU", "OÜ", "MTU", "MTÜ", "SA"}
     COMPANY_PREFIX_LEMMAS = {"aktsiaselts", "osaühing", "mittetulundusühing", "sihtasutus"}
@@ -133,8 +133,8 @@ class ExpandLeftCompanyPrefixRule(BaseRule):
 
 
 class SplitCoordinatedLocationRule(BaseRule):
-    rule_id = "poolita_koordineeritud_loc"
-    description = "Poolitab koordineeritud LOC märgendi nagu Põlva- ja Hiiumaal."
+    rule_id = "jaga_koordineeritud_loc"
+    description = "Jagab kaheks koordineeritud LOC märgendi nagu Põlva- ja Hiiumaal."
 
     def applies_to(self, span, context):
         return span.label == "LOC" and len(span.tokens) >= 3

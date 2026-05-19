@@ -14,6 +14,7 @@ class MissingProposal:
 class BaseMissingRule:
     rule_id = "base_missing_rule"
     description = ""
+    stage = "missing"
 
     def find(self, context, occupied):
         return []

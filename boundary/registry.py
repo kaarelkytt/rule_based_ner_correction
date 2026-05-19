@@ -1,49 +1,23 @@
 from .engine import RuleEngine
-from .org_rules import *
-from .loc_rules import *
-from .per_rules import *
-from .relable_remove import *
+from .adjust_rules import *
+from .split_rules import *
+from .finalize_rules import *
 
 
 def get_default_rules():
     return [
-        ExpandRightLocationFacilityHeadRule(),
-        ExpandRightPersonFlatRule(),
         SplitDisconnectedOrgTreeRule(),
-        TrimQuotedNameRule(),
-        ExpandRightGoverningBodyRule(),
         SplitDisconnectedPerTreeRule(),
         SplitDisconnectedLocTreeRule(),
+        SplitCoordinatedLocationRule(),
+        ExpandRightLocationFacilityHeadRule(),
+        ExpandRightPersonFlatRule(),
+        TrimQuotedOrgRule(),
+        ExpandRightGoverningBodyRule(),
         ExpandPersonRootChainRule(),
         ExpandLeftCompanyPrefixRule(),
-        SplitCoordinatedLocationRule(),
-        RemoveGenericUppercaseHeadingRule(),
         ExpandLocNsubjFlatRule(),
-        
-        #TrimLeftReportingPrefixRule(),
-        #TrimLeftLegalFormRule(),
-        #TrimRightRoleTailRule(),
-        #TrimRightMeetingTailRule(),
-        #TrimRightCorporateBodyTailRule(),
-        #ExpandLeftHyphenJaOrgRule(),
-        #ExpandLeftCompanyNameRule(),
-        #ExpandRightCompanySuffixRule(),
-        #SplitByCaseMismatchRule(),
-        #TrimQuotedPersonRule(),
-        #TrimLeftPersonTitleRule(),
-        #RelabelSingleTokenNameToPersonRule(),
-        #RelabelExpandNamePairToPersonRule(),
-        #ExpandLeftPersonFlatPrefixRule(),
-        #ExpandRightPersonSuffixRule(),
-        #ExpandLocApposFlatHeadObjOblRule(),
-        #ExpandLocNmodFlatHeadOblNsubjNmodRule(),
-        #ExpandLocOblFlatHeadNotAclRule(),
-        #ExpandPersonNsubjChainRule(),
-        #ExpandPersonNmodChainRule(),
-        #ExpandPersonConjChainRule(),
-        #ExpandPersonApposChainRule(),
-        #TrimRightLocationPublicationRule(),
-        #TrimRightLocationCaseContextRule(),
+        RemoveGenericUppercaseHeadingRule(),
     ]
 
 

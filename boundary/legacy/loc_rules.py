@@ -276,8 +276,8 @@ def find_start_flat_chain(
 
 
 class SplitDisconnectedLocTreeRule(BaseSplitDisconnectedEntityTreeRule):
-    rule_id = "poolita_mittesidus_loc_puu"
-    description = "Poolitab mittesidusa LOC nimeüksuse."
+    rule_id = "lahuta_mittesidus_loc_puu"
+    description = "Lahutab mittesidusa LOC nimeüksuse."
 
     LABEL = "LOC"
     SCORE = 0.95
@@ -296,7 +296,7 @@ class SplitDisconnectedLocTreeRule(BaseSplitDisconnectedEntityTreeRule):
 
 
 class ExpandRightLocationFacilityHeadRule(BaseRule):
-    rule_id = "laienda_loc_paremale_kohatüüp"
+    rule_id = "laienda_loc_paremale_kohapea"
     description = "Laiendab ühesõnalist LOC märgendit kohatüübi või rajatise sõna võrra."
 
     def applies_to(self, span, context):
@@ -332,7 +332,7 @@ class ExpandRightLocationFacilityHeadRule(BaseRule):
     
 
 class ExpandPersonRootChainRule(BaseRule):
-    rule_id = 'laienda_nime_root_ahel'
+    rule_id = 'laienda_nime_root'
     description = 'Laiendab ühe-tokenilist PER üksust root + flat* nimeahelaks.'
 
     START_DEPRELS = {'root'}

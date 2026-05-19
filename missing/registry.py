@@ -11,19 +11,6 @@ def get_default_rules():
         InsertCoreInstitutionMentionRule(),
         InsertGenitiveInstitutionOwnerRule(),
         InsertShortInstitutionHeadPhraseRule(),
-        
-        #InsertUppercasePersonHeadingRule(),
-        #InsertShortHeadlineEntityRule(),
-        #InsertSentenceStartReportingPersonRule(),
-        #InsertSentenceStartPersonLabelRule(),
-        #InsertSentenceStartInstitutionChainRule(),
-        #InsertPersonConjChainRule(),
-        #InsertPersonAttributionRule(),
-        #InsertSentenceStartSimplePersonRule(),
-        #InsertInstitutionChainRoleOwnerRule(),
-        #InsertInstitutionRoleOwnerRule(),
-        #InsertInstitutionConjRule(),
-        #InsertLocativeProperLocationRule(),
     ]
 
 

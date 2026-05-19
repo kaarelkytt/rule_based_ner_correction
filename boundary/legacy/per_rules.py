@@ -13,7 +13,7 @@ def _is_name_like_token(token):
 
 
 class SplitDisconnectedPerTreeRule(BaseSplitDisconnectedEntityTreeRule):
-    rule_id = "poolita_mittesidus_per_puu"
+    rule_id = "lahuta_mittesidus_per_puu"
     description = "Lahutab mittesidusa PER nimeüksuse."
 
     LABEL = "PER"

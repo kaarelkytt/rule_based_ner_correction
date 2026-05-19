@@ -2,10 +2,9 @@ from estnltk import Layer
 from estnltk.taggers import Tagger
 
 from .boundary.engine import RuleEngine
-from .boundary.registry import get_default_rules
 from .context import TextContext
 from .missing.engine import MissingRuleEngine
-from .missing.registry import get_default_rules as get_default_missing_rules
+from .registry import split_rules_by_stage, get_default_rules
 
 
 class RuleBasedNerCorrectionTagger(Tagger):
@@ -17,11 +16,13 @@ class RuleBasedNerCorrectionTagger(Tagger):
         "morph_layer",
         "syntax_layer",
         "output_layer",
-        "boundary_rules",
-        "missing_rules",
-        "_RuleBasedNerCorrectionTagger__boundary_tmp_layer",
-        "_RuleBasedNerCorrectionTagger__boundary_engine",
-        "_RuleBasedNerCorrectionTagger__missing_engine",
+        "_split_tmp_layer",
+        "_adjust_tmp_layer",
+        "_finalize_tmp_layer",
+        "_split_engine",
+        "_adjust_engine",
+        "_finalize_engine",
+        "_missing_engine",
     ]
 
     def __init__(
@@ -31,8 +32,7 @@ class RuleBasedNerCorrectionTagger(Tagger):
         morph_layer="morph_analysis",
         syntax_layer="stanza_syntax",
         output_layer="ner_rules_corrected",
-        boundary_rules=None,
-        missing_rules=None,
+        rules=None,
     ):
         self.input_layers = [ner_layer, words_layer, morph_layer, syntax_layer]
         self.output_layer = output_layer
@@ -42,20 +42,22 @@ class RuleBasedNerCorrectionTagger(Tagger):
         self.words_layer = words_layer
         self.morph_layer = morph_layer
         self.syntax_layer = syntax_layer
-        self.boundary_rules = list(get_default_rules()) if boundary_rules is None else list(boundary_rules)
-        self.missing_rules = list(get_default_missing_rules()) if missing_rules is None else list(missing_rules)
 
-        self.__boundary_tmp_layer = "__rule_based_ner_boundary_tmp"
-        self.__boundary_engine = RuleEngine(
-            self.boundary_rules,
-            morph_layer=self.morph_layer,
-            syntax_layer=self.syntax_layer,
-        )
-        self.__missing_engine = MissingRuleEngine(
-            self.missing_rules,
-            morph_layer=self.morph_layer,
-            syntax_layer=self.syntax_layer,
-        )
+        if rules is None:
+            rules = get_default_rules()
+        else:
+            rules = list(rules)
+
+        grouped_rules = split_rules_by_stage(rules)
+
+        self._split_tmp_layer = "__rule_based_ner_split_tmp"
+        self._adjust_tmp_layer = "__rule_based_ner_adjust_tmp"
+        self._finalize_tmp_layer = "__rule_based_ner_finalize_tmp"
+
+        self._split_engine = RuleEngine(grouped_rules["split"], morph_layer=self.morph_layer, syntax_layer=self.syntax_layer)
+        self._adjust_engine = RuleEngine(grouped_rules["adjust"], morph_layer=self.morph_layer, syntax_layer=self.syntax_layer)
+        self._finalize_engine = RuleEngine(grouped_rules["finalize"], morph_layer=self.morph_layer, syntax_layer=self.syntax_layer)
+        self._missing_engine = MissingRuleEngine(grouped_rules["missing"], morph_layer=self.morph_layer, syntax_layer=self.syntax_layer)
 
     def _make_layer_template(self):
         return Layer(
@@ -65,7 +67,14 @@ class RuleBasedNerCorrectionTagger(Tagger):
             ambiguous=False,
         )
 
-    def _build_output_layer(self, text, input_layer, chosen):
+    def _apply_boundary_pass(self, text, input_layer, output_layer, engine):
+        if not engine.rules:
+            return input_layer
+        spans, _ = engine.propose_for_text(text, input_layer=input_layer)
+        engine.attach_output_layer(text, spans, output_layer=output_layer)
+        return output_layer
+
+    def _build_output_layer(self, text, input_layer, chosen_missing):
         context = TextContext(
             text,
             morph_layer=self.morph_layer,
@@ -83,7 +92,7 @@ class RuleBasedNerCorrectionTagger(Tagger):
             layer.add_annotation(key, nertag=annotation.annotations[0]["nertag"])
             seen.add(key)
 
-        for proposal in chosen:
+        for proposal in chosen_missing:
             start = context.tokens[proposal.start_i].start
             end = context.tokens[proposal.end_i - 1].end
             key = (start, end)
@@ -95,17 +104,27 @@ class RuleBasedNerCorrectionTagger(Tagger):
         return layer
 
     def _make_layer(self, text, layers, status):
+        temp_layers = [
+            self._split_tmp_layer,
+            self._adjust_tmp_layer,
+            self._finalize_tmp_layer,
+        ]
         try:
-            if self.__boundary_tmp_layer in text.layers:
-                text.pop_layer(self.__boundary_tmp_layer)
+            for layer_name in temp_layers:
+                if layer_name in text.layers:
+                    text.pop_layer(layer_name)
 
-            boundary_spans, _ = self.__boundary_engine.propose_for_text(text, input_layer=self.ner_layer)
-            self.__boundary_engine.attach_output_layer(text, boundary_spans, output_layer=self.__boundary_tmp_layer)
+            current_layer = self.ner_layer
+            current_layer = self._apply_boundary_pass(text, current_layer, self._split_tmp_layer, self._split_engine)
+            current_layer = self._apply_boundary_pass(text, current_layer, self._adjust_tmp_layer, self._adjust_engine)
+            current_layer = self._apply_boundary_pass(text, current_layer, self._finalize_tmp_layer, self._finalize_engine)
 
-            chosen, _ = self.__missing_engine.propose_for_text(text, input_layer=self.__boundary_tmp_layer)
-            output_layer = self._build_output_layer(text, self.__boundary_tmp_layer, chosen)
+            chosen_missing, _ = self._missing_engine.propose_for_text(text, input_layer=current_layer)
+            output_layer = self._build_output_layer(text, current_layer, chosen_missing)
         finally:
-            if self.__boundary_tmp_layer in text.layers:
-                text.pop_layer(self.__boundary_tmp_layer)
+            for layer_name in temp_layers:
+                if layer_name in text.layers:
+                    text.pop_layer(layer_name)
 
         return output_layer
+    

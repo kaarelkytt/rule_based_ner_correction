@@ -72,8 +72,24 @@ def _span_patterns(span_view, context=None):
             "start_i": None,
             "end_i": None,
             "lemmas": [],
+            "forms": [],
             "morph_pos_pattern": [],
             "deprel_pattern": [],
+            "upostag_pattern": [],
+            "xpostag_pattern": [],
+            "head_pattern": [],
+            "root_count": None,
+            "name_like_ratio": None,
+            "first_token_text": None,
+            "last_token_text": None,
+            "first_lemma": None,
+            "last_lemma": None,
+            "first_form": None,
+            "last_form": None,
+            "first_morph_pos": None,
+            "last_morph_pos": None,
+            "first_deprel": None,
+            "last_deprel": None,
             "internal_root_texts": [],
             "internal_root_deprels": [],
             "internal_root_morph_pos": [],
@@ -99,8 +115,24 @@ def _span_patterns(span_view, context=None):
         "start_i": span_view.start_i,
         "end_i": span_view.end_i,
         "lemmas": [token.lemma for token in span_view.tokens],
+        "forms": [token.form for token in span_view.tokens],
         "morph_pos_pattern": [token.morph_pos for token in span_view.tokens],
         "deprel_pattern": [token.deprel for token in span_view.tokens],
+        "upostag_pattern": [token.upostag for token in span_view.tokens],
+        "xpostag_pattern": [token.xpostag for token in span_view.tokens],
+        "head_pattern": [token.head for token in span_view.tokens],
+        "root_count": span_view.root_count,
+        "name_like_ratio": span_view.name_like_ratio,
+        "first_token_text": span_view.tokens[0].text if span_view.tokens else None,
+        "last_token_text": span_view.tokens[-1].text if span_view.tokens else None,
+        "first_lemma": span_view.tokens[0].lemma if span_view.tokens else None,
+        "last_lemma": span_view.tokens[-1].lemma if span_view.tokens else None,
+        "first_form": span_view.tokens[0].form if span_view.tokens else None,
+        "last_form": span_view.tokens[-1].form if span_view.tokens else None,
+        "first_morph_pos": span_view.tokens[0].morph_pos if span_view.tokens else None,
+        "last_morph_pos": span_view.tokens[-1].morph_pos if span_view.tokens else None,
+        "first_deprel": span_view.tokens[0].deprel if span_view.tokens else None,
+        "last_deprel": span_view.tokens[-1].deprel if span_view.tokens else None,
         **external,
     }
 
@@ -122,8 +154,24 @@ def _layer_spans(text, layer_name, context=None):
                 "start_i": patterns["start_i"],
                 "end_i": patterns["end_i"],
                 "lemmas": patterns["lemmas"],
+                "forms": patterns["forms"],
                 "morph_pos_pattern": patterns["morph_pos_pattern"],
                 "deprel_pattern": patterns["deprel_pattern"],
+                "upostag_pattern": patterns["upostag_pattern"],
+                "xpostag_pattern": patterns["xpostag_pattern"],
+                "head_pattern": patterns["head_pattern"],
+                "root_count": patterns["root_count"],
+                "name_like_ratio": patterns["name_like_ratio"],
+                "first_token_text": patterns["first_token_text"],
+                "last_token_text": patterns["last_token_text"],
+                "first_lemma": patterns["first_lemma"],
+                "last_lemma": patterns["last_lemma"],
+                "first_form": patterns["first_form"],
+                "last_form": patterns["last_form"],
+                "first_morph_pos": patterns["first_morph_pos"],
+                "last_morph_pos": patterns["last_morph_pos"],
+                "first_deprel": patterns["first_deprel"],
+                "last_deprel": patterns["last_deprel"],
                 "internal_root_texts": patterns["internal_root_texts"],
                 "internal_root_deprels": patterns["internal_root_deprels"],
                 "internal_root_morph_pos": patterns["internal_root_morph_pos"],
@@ -133,6 +181,28 @@ def _layer_spans(text, layer_name, context=None):
             }
         )
     return spans
+
+
+def _context_window_text(context, start_i, end_i, window=4):
+    if start_i is None or end_i is None:
+        return ""
+    left = max(0, start_i - window)
+    right = min(len(context.tokens), end_i + window)
+    return " ".join(token.text for token in context.tokens[left:right])
+
+
+def _component_window_text(context, spans):
+    indexed = [
+        span for span in spans
+        if span.get("start_i") is not None and span.get("end_i") is not None
+    ]
+    if not indexed:
+        return ""
+    return _context_window_text(
+        context,
+        min(span["start_i"] for span in indexed),
+        max(span["end_i"] for span in indexed),
+    )
 
 
 def _overlap(first, second):
@@ -206,10 +276,34 @@ def collect_layer_changes(
                     "new_labels": [],
                     "base_lemmas": [base["lemmas"]],
                     "new_lemmas": [],
+                    "base_forms": [base["forms"]],
+                    "new_forms": [],
                     "base_morph_pos_patterns": [base["morph_pos_pattern"]],
                     "new_morph_pos_patterns": [],
                     "base_deprel_patterns": [base["deprel_pattern"]],
                     "new_deprel_patterns": [],
+                    "base_upostag_patterns": [base["upostag_pattern"]],
+                    "new_upostag_patterns": [],
+                    "base_xpostag_patterns": [base["xpostag_pattern"]],
+                    "new_xpostag_patterns": [],
+                    "base_head_patterns": [base["head_pattern"]],
+                    "new_head_patterns": [],
+                    "base_root_counts": [base["root_count"]],
+                    "new_root_counts": [],
+                    "base_name_like_ratios": [base["name_like_ratio"]],
+                    "new_name_like_ratios": [],
+                    "base_first_token_texts": [base["first_token_text"]],
+                    "new_first_token_texts": [],
+                    "base_last_token_texts": [base["last_token_text"]],
+                    "new_last_token_texts": [],
+                    "base_first_forms": [base["first_form"]],
+                    "new_first_forms": [],
+                    "base_last_forms": [base["last_form"]],
+                    "new_last_forms": [],
+                    "base_first_deprels": [base["first_deprel"]],
+                    "new_first_deprels": [],
+                    "base_last_deprels": [base["last_deprel"]],
+                    "new_last_deprels": [],
 
                     "base_internal_root_texts": [base["internal_root_texts"]],
                     "new_internal_root_texts": [],
@@ -224,7 +318,7 @@ def collect_layer_changes(
                     "new_external_head_deprels": [],
                     "base_external_head_morph_pos": [base["external_head_morph_pos"]],
                     "new_external_head_morph_pos": [],
-                    
+                    "anchor_window_text": _context_window_text(context, base["start_i"], base["end_i"]),
                     "text": text.text,
                 }
             )
@@ -269,10 +363,34 @@ def collect_layer_changes(
                 "new_labels": [span["label"] for span in component_new],
                 "base_lemmas": [span["lemmas"] for span in component_base],
                 "new_lemmas": [span["lemmas"] for span in component_new],
+                "base_forms": [span["forms"] for span in component_base],
+                "new_forms": [span["forms"] for span in component_new],
                 "base_morph_pos_patterns": [span["morph_pos_pattern"] for span in component_base],
                 "new_morph_pos_patterns": [span["morph_pos_pattern"] for span in component_new],
                 "base_deprel_patterns": [span["deprel_pattern"] for span in component_base],
                 "new_deprel_patterns": [span["deprel_pattern"] for span in component_new],
+                "base_upostag_patterns": [span["upostag_pattern"] for span in component_base],
+                "new_upostag_patterns": [span["upostag_pattern"] for span in component_new],
+                "base_xpostag_patterns": [span["xpostag_pattern"] for span in component_base],
+                "new_xpostag_patterns": [span["xpostag_pattern"] for span in component_new],
+                "base_head_patterns": [span["head_pattern"] for span in component_base],
+                "new_head_patterns": [span["head_pattern"] for span in component_new],
+                "base_root_counts": [span["root_count"] for span in component_base],
+                "new_root_counts": [span["root_count"] for span in component_new],
+                "base_name_like_ratios": [span["name_like_ratio"] for span in component_base],
+                "new_name_like_ratios": [span["name_like_ratio"] for span in component_new],
+                "base_first_token_texts": [span["first_token_text"] for span in component_base],
+                "new_first_token_texts": [span["first_token_text"] for span in component_new],
+                "base_last_token_texts": [span["last_token_text"] for span in component_base],
+                "new_last_token_texts": [span["last_token_text"] for span in component_new],
+                "base_first_forms": [span["first_form"] for span in component_base],
+                "new_first_forms": [span["first_form"] for span in component_new],
+                "base_last_forms": [span["last_form"] for span in component_base],
+                "new_last_forms": [span["last_form"] for span in component_new],
+                "base_first_deprels": [span["first_deprel"] for span in component_base],
+                "new_first_deprels": [span["first_deprel"] for span in component_new],
+                "base_last_deprels": [span["last_deprel"] for span in component_base],
+                "new_last_deprels": [span["last_deprel"] for span in component_new],
 
                 "base_internal_root_texts": [span["internal_root_texts"] for span in component_base],
                 "new_internal_root_texts": [span["internal_root_texts"] for span in component_new],
@@ -287,7 +405,7 @@ def collect_layer_changes(
                 "new_external_head_deprels": [span["external_head_deprels"] for span in component_new],
                 "base_external_head_morph_pos": [span["external_head_morph_pos"] for span in component_base],
                 "new_external_head_morph_pos": [span["external_head_morph_pos"] for span in component_new],
-
+                "anchor_window_text": _component_window_text(context, component_base + component_new),
                 "text": text.text,
             }
         )
@@ -307,10 +425,34 @@ def collect_layer_changes(
                 "new_labels": [new["label"]],
                 "base_lemmas": [],
                 "new_lemmas": [new["lemmas"]],
+                "base_forms": [],
+                "new_forms": [new["forms"]],
                 "base_morph_pos_patterns": [],
                 "new_morph_pos_patterns": [new["morph_pos_pattern"]],
                 "base_deprel_patterns": [],
                 "new_deprel_patterns": [new["deprel_pattern"]],
+                "base_upostag_patterns": [],
+                "new_upostag_patterns": [new["upostag_pattern"]],
+                "base_xpostag_patterns": [],
+                "new_xpostag_patterns": [new["xpostag_pattern"]],
+                "base_head_patterns": [],
+                "new_head_patterns": [new["head_pattern"]],
+                "base_root_counts": [],
+                "new_root_counts": [new["root_count"]],
+                "base_name_like_ratios": [],
+                "new_name_like_ratios": [new["name_like_ratio"]],
+                "base_first_token_texts": [],
+                "new_first_token_texts": [new["first_token_text"]],
+                "base_last_token_texts": [],
+                "new_last_token_texts": [new["last_token_text"]],
+                "base_first_forms": [],
+                "new_first_forms": [new["first_form"]],
+                "base_last_forms": [],
+                "new_last_forms": [new["last_form"]],
+                "base_first_deprels": [],
+                "new_first_deprels": [new["first_deprel"]],
+                "base_last_deprels": [],
+                "new_last_deprels": [new["last_deprel"]],
 
                 "base_internal_root_texts": [],
                 "new_internal_root_texts": [new["internal_root_texts"]],
@@ -325,20 +467,12 @@ def collect_layer_changes(
                 "new_external_head_deprels": [new["external_head_deprels"]],
                 "base_external_head_morph_pos": [],
                 "new_external_head_morph_pos": [new["external_head_morph_pos"]],
-
+                "anchor_window_text": _context_window_text(context, new["start_i"], new["end_i"]),
                 "text": text.text,
             }
         )
 
     return rows
-
-
-def summarize_change_rows(rows):
-    counts = {}
-    for row in rows:
-        key = row["change_type"]
-        counts[key] = counts.get(key, 0) + 1
-    return counts
 
 
 def _iter_items(items):
@@ -372,31 +506,12 @@ def apply_single_rule(
         engine = RuleEngine([rule], morph_layer=morph_layer, syntax_layer=syntax_layer)
         final_spans, proposal_rows = engine.propose_for_text(text, input_layer=base_layer)
         engine.attach_output_layer(text, final_spans, output_layer=output_layer)
-        return text, proposal_rows, final_spans
+        return text, proposal_rows
 
     engine = MissingRuleEngine([rule], morph_layer=morph_layer, syntax_layer=syntax_layer)
     chosen, proposal_rows = engine.propose_for_text(text, input_layer=base_layer)
     engine.attach_output_layer(text, input_layer=base_layer, chosen=chosen, output_layer=output_layer)
-    return text, proposal_rows, chosen
-
-
-def _build_summary(change_df, proposal_df):
-    rows = []
-    if not change_df.empty:
-        counts = change_df["change_type"].value_counts()
-        for name, count in counts.items():
-            rows.append({"kind": "change_type", "name": name, "count": int(count)})
-    if not proposal_df.empty:
-        if "label" in proposal_df.columns:
-            counts = proposal_df["label"].value_counts()
-            for name, count in counts.items():
-                rows.append({"kind": "label", "name": name, "count": int(count)})
-        text_column = "text" if "text" in proposal_df.columns else "input_text" if "input_text" in proposal_df.columns else None
-        if text_column is not None:
-            counts = proposal_df[text_column].value_counts().head(20)
-            for name, count in counts.items():
-                rows.append({"kind": "top_text", "name": name, "count": int(count)})
-    return pd.DataFrame(rows)
+    return text, proposal_rows
 
 
 def _normalize_list_cell(value):
@@ -434,10 +549,34 @@ def _normalize_change_row(row):
         "new_labels": _normalize_list_cell(row.get("new_labels")),
         "base_lemmas": _normalize_list_cell(row.get("base_lemmas")),
         "new_lemmas": _normalize_list_cell(row.get("new_lemmas")),
+        "base_forms": _normalize_list_cell(row.get("base_forms")),
+        "new_forms": _normalize_list_cell(row.get("new_forms")),
         "base_morph_pos_patterns": _normalize_list_cell(row.get("base_morph_pos_patterns")),
         "new_morph_pos_patterns": _normalize_list_cell(row.get("new_morph_pos_patterns")),
         "base_deprel_patterns": _normalize_list_cell(row.get("base_deprel_patterns")),
         "new_deprel_patterns": _normalize_list_cell(row.get("new_deprel_patterns")),
+        "base_upostag_patterns": _normalize_list_cell(row.get("base_upostag_patterns")),
+        "new_upostag_patterns": _normalize_list_cell(row.get("new_upostag_patterns")),
+        "base_xpostag_patterns": _normalize_list_cell(row.get("base_xpostag_patterns")),
+        "new_xpostag_patterns": _normalize_list_cell(row.get("new_xpostag_patterns")),
+        "base_head_patterns": _normalize_list_cell(row.get("base_head_patterns")),
+        "new_head_patterns": _normalize_list_cell(row.get("new_head_patterns")),
+        "base_root_counts": _normalize_list_cell(row.get("base_root_counts")),
+        "new_root_counts": _normalize_list_cell(row.get("new_root_counts")),
+        "base_name_like_ratios": _normalize_list_cell(row.get("base_name_like_ratios")),
+        "new_name_like_ratios": _normalize_list_cell(row.get("new_name_like_ratios")),
+        "base_first_token_texts": _normalize_list_cell(row.get("base_first_token_texts")),
+        "new_first_token_texts": _normalize_list_cell(row.get("new_first_token_texts")),
+        "base_last_token_texts": _normalize_list_cell(row.get("base_last_token_texts")),
+        "new_last_token_texts": _normalize_list_cell(row.get("new_last_token_texts")),
+        "base_first_forms": _normalize_list_cell(row.get("base_first_forms")),
+        "new_first_forms": _normalize_list_cell(row.get("new_first_forms")),
+        "base_last_forms": _normalize_list_cell(row.get("base_last_forms")),
+        "new_last_forms": _normalize_list_cell(row.get("new_last_forms")),
+        "base_first_deprels": _normalize_list_cell(row.get("base_first_deprels")),
+        "new_first_deprels": _normalize_list_cell(row.get("new_first_deprels")),
+        "base_last_deprels": _normalize_list_cell(row.get("base_last_deprels")),
+        "new_last_deprels": _normalize_list_cell(row.get("new_last_deprels")),
         "base_internal_root_texts": _normalize_list_cell(row.get("base_internal_root_texts")),
         "new_internal_root_texts": _normalize_list_cell(row.get("new_internal_root_texts")),
         "base_internal_root_deprels": _normalize_list_cell(row.get("base_internal_root_deprels")),
@@ -450,6 +589,7 @@ def _normalize_change_row(row):
         "new_external_head_deprels": _normalize_list_cell(row.get("new_external_head_deprels")),
         "base_external_head_morph_pos": _normalize_list_cell(row.get("base_external_head_morph_pos")),
         "new_external_head_morph_pos": _normalize_list_cell(row.get("new_external_head_morph_pos")),
+        "anchor_window_text": _normalize_scalar_cell(row.get("anchor_window_text")),
         "text": _normalize_scalar_cell(row.get("text")),
     }
 
@@ -471,10 +611,34 @@ def _change_signature(row):
         row["new_labels"],
         row["base_lemmas"],
         row["new_lemmas"],
+        row["base_forms"],
+        row["new_forms"],
         row["base_morph_pos_patterns"],
         row["new_morph_pos_patterns"],
         row["base_deprel_patterns"],
         row["new_deprel_patterns"],
+        row["base_upostag_patterns"],
+        row["new_upostag_patterns"],
+        row["base_xpostag_patterns"],
+        row["new_xpostag_patterns"],
+        row["base_head_patterns"],
+        row["new_head_patterns"],
+        row["base_root_counts"],
+        row["new_root_counts"],
+        row["base_name_like_ratios"],
+        row["new_name_like_ratios"],
+        row["base_first_token_texts"],
+        row["new_first_token_texts"],
+        row["base_last_token_texts"],
+        row["new_last_token_texts"],
+        row["base_first_forms"],
+        row["new_first_forms"],
+        row["base_last_forms"],
+        row["new_last_forms"],
+        row["base_first_deprels"],
+        row["new_first_deprels"],
+        row["base_last_deprels"],
+        row["new_last_deprels"],
         row["base_internal_root_texts"],
         row["new_internal_root_texts"],
         row["base_internal_root_deprels"],
@@ -487,6 +651,7 @@ def _change_signature(row):
         row["new_external_head_deprels"],
         row["base_external_head_morph_pos"],
         row["new_external_head_morph_pos"],
+        row["anchor_window_text"],
         row["text"],
     )
 
@@ -523,10 +688,34 @@ def _display_row(row):
         "new_labels": list(row["new_labels"]),
         "base_lemmas": list(row["base_lemmas"]),
         "new_lemmas": list(row["new_lemmas"]),
+        "base_forms": list(row["base_forms"]),
+        "new_forms": list(row["new_forms"]),
         "base_morph_pos_patterns": list(row["base_morph_pos_patterns"]),
         "new_morph_pos_patterns": list(row["new_morph_pos_patterns"]),
         "base_deprel_patterns": list(row["base_deprel_patterns"]),
         "new_deprel_patterns": list(row["new_deprel_patterns"]),
+        "base_upostag_patterns": list(row["base_upostag_patterns"]),
+        "new_upostag_patterns": list(row["new_upostag_patterns"]),
+        "base_xpostag_patterns": list(row["base_xpostag_patterns"]),
+        "new_xpostag_patterns": list(row["new_xpostag_patterns"]),
+        "base_head_patterns": list(row["base_head_patterns"]),
+        "new_head_patterns": list(row["new_head_patterns"]),
+        "base_root_counts": list(row["base_root_counts"]),
+        "new_root_counts": list(row["new_root_counts"]),
+        "base_name_like_ratios": list(row["base_name_like_ratios"]),
+        "new_name_like_ratios": list(row["new_name_like_ratios"]),
+        "base_first_token_texts": list(row["base_first_token_texts"]),
+        "new_first_token_texts": list(row["new_first_token_texts"]),
+        "base_last_token_texts": list(row["base_last_token_texts"]),
+        "new_last_token_texts": list(row["new_last_token_texts"]),
+        "base_first_forms": list(row["base_first_forms"]),
+        "new_first_forms": list(row["new_first_forms"]),
+        "base_last_forms": list(row["base_last_forms"]),
+        "new_last_forms": list(row["new_last_forms"]),
+        "base_first_deprels": list(row["base_first_deprels"]),
+        "new_first_deprels": list(row["new_first_deprels"]),
+        "base_last_deprels": list(row["base_last_deprels"]),
+        "new_last_deprels": list(row["new_last_deprels"]),
         "base_internal_root_texts": list(row["base_internal_root_texts"]),
         "new_internal_root_texts": list(row["new_internal_root_texts"]),
         "base_internal_root_deprels": list(row["base_internal_root_deprels"]),
@@ -539,6 +728,7 @@ def _display_row(row):
         "new_external_head_deprels": list(row["new_external_head_deprels"]),
         "base_external_head_morph_pos": list(row["base_external_head_morph_pos"]),
         "new_external_head_morph_pos": list(row["new_external_head_morph_pos"]),
+        "anchor_window_text": row["anchor_window_text"],
         "text": row["text"],
     }
 
@@ -702,11 +892,10 @@ def run_rule_analysis_on_items(
 
     change_rows = []
     proposal_rows = []
-    text_rows = []
     corrected_items = []
 
     for text_id, text in tqdm(items, total=len(items)):
-        corrected, proposals, final_objects = apply_single_rule(
+        corrected, proposals = apply_single_rule(
             text=text,
             rule=rule,
             base_layer=base_layer,
@@ -738,43 +927,19 @@ def run_rule_analysis_on_items(
             row["source_rule"] = rule.rule_id
         change_rows.extend(rows)
 
-        counts = summarize_change_rows(rows)
-        text_rows.append(
-            {
-                "text_id": text_id,
-                "base_span_count": len(corrected[base_layer]),
-                "new_span_count": len(corrected[output_layer]),
-                "changed_total": int(sum(counts.values())),
-                "added": int(counts.get("ADDED", 0)),
-                "removed": int(counts.get("REMOVED", 0)),
-                "expanded": int(counts.get("EXPANDED", 0)),
-                "trimmed": int(counts.get("TRIMMED", 0)),
-                "shifted": int(counts.get("SHIFTED", 0)),
-                "split": int(counts.get("SPLIT", 0)),
-                "merged": int(counts.get("MERGED", 0)),
-                "relabeled": int(counts.get("RELABELED", 0)),
-                "complex": int(counts.get("COMPLEX", 0)),
-            }
-        )
-
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     change_df = pd.DataFrame(change_rows)
     proposal_df = pd.DataFrame(proposal_rows)
-    text_df = pd.DataFrame(text_rows)
-    summary_df = _build_summary(change_df, proposal_df)
 
     change_path = output_dir / f"{rule.rule_id}_change_rows.csv"
     change_df.to_csv(change_path, index=False)
 
     return {
         "rule_id": rule.rule_id,
-        "stage": stage,
         "change_rows": change_df,
         "proposal_rows": proposal_df,
-        "text_summary": text_df,
-        "summary": summary_df,
         "corrected_items": corrected_items,
         "paths": {"change_rows": change_path},
     }

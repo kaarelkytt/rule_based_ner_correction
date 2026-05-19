@@ -3,9 +3,9 @@
 Siin paketis on kahte tüüpi reegleid.
 
 - `boundary` reeglid muudavad olemasolevat nimeüksust:
+  - jagavad kaheks
   - laiendavad
   - kahandavad
-  - jagavad kaheks
   - eemaldavad
   - muudavad silti
 - `missing` reeglid lisavad puuduva nimeüksuse sinna, kus seda enne ei olnud
@@ -16,13 +16,13 @@ Kõige lihtsam on kasutada notebooki:
 
 - `testi_reeglit.ipynb`
 
-Kirjuta reegel notebooki sisse, lase see 1000 teksti peal läbi ja vaata:
+Kirjuta reegel notebooki sisse, lase see valitud teksti hulga peal läbi ja vaata:
 
 - mitu muudatust tuli
 - millised näited välja tulid
 - mida `draw_tree` peal näeb
 
-Kui reegel tundub hea, siis tõsta sama klass sobivasse `.py` faili.
+Kui reegel tundub hea, tõsta sama klass sobivasse `.py` faili.
 
 ## Boundary-reegel
 
@@ -60,8 +60,8 @@ class MinuReegel(BaseRule):
 Siia pane:
 
 - millise sildi kohta reegel käib
-- kas span peab olema ühesõnaline või mitmesõnaline
-- muud odavad kontrollid
+- kas span peab olema ühe- või mitmesõnaline
+- muud lihtsad kontrollid
 
 ### Mida `propose` teeb
 
@@ -73,7 +73,21 @@ Siin:
 - ehitad uue span'i
 - tagastad `RuleProposal`
 
-Kui reegel ikkagi ei kehti, siis tagasta `None`.
+Kui reegel ikkagi ei kehti, tagasta `None`.
+
+### Boundary-reegli faasid
+
+Boundary-reeglitel saab olla faas:
+
+- `split` - esmalt jagatakse vigased span'id väiksemaks
+- `adjust` - seejärel laiendatakse või kärbitakse
+- `finalize` - lõpus tehakse eemaldused ja ümbermärgendused
+
+Vaikimisi on `stage = "adjust"`. Kui tahad, et reegel jookseks enne teisi, lisa klassile näiteks:
+
+```python
+stage = "split"
+```
 
 ### Boundary-reegli operatsioonid
 
@@ -97,7 +111,7 @@ new_span = context.span_from_indices("PER", span.start_i, span.end_i)
 
 ## Missing-reegel
 
-Missing-reegli ülemklass on  `BaseMissingRule`:
+Missing-reegli ülemklass on `BaseMissingRule`:
 
 ```python
 from rule_based_ner_correction.missing.base import BaseMissingRule, MissingProposal
@@ -113,7 +127,9 @@ class MinuPuuduvaReegel(BaseMissingRule):
             if i in occupied:
                 continue
             if token.text == "ETV":
-                proposals.append(MissingProposal(self.rule_id, "ORG", i, i + 1, 0.90))
+                proposals.append(
+                    MissingProposal(self.rule_id, "ORG", i, i + 1, 0.90)
+                )
         return proposals
 ```
 
@@ -122,10 +138,9 @@ class MinuPuuduvaReegel(BaseMissingRule):
 ## Kuhu uus reegel panna
 
 - olemasoleva nimeüksuse muutmine:
-  - `boundary/per_rules.py`
-  - `boundary/org_rules.py`
-  - `boundary/loc_rules.py`
-  - `boundary/relable_remove.py`
+  - `boundary/split_rules.py`
+  - `boundary/adjust_rules.py`
+  - `boundary/finalize_rules.py`
 - puuduva nimeüksuse lisamine:
   - `missing/per_rules.py`
   - `missing/org_rules.py`
@@ -136,6 +151,19 @@ Pärast seda lisa reegel registrisse:
 - `boundary/registry.py`
 - või `missing/registry.py`
 
+Taggerile saab anda kõik reeglid ühe listina. Sel juhul jagab tagger need ise `stage` välja järgi õigetesse faasidesse:
+
+```python
+from rule_based_ner_correction import RuleBasedNerCorrectionTagger, get_default_rules
+
+rules = get_default_rules() + [MinuReegel()]
+tagger = RuleBasedNerCorrectionTagger(rules=rules)
+```
+
 ## Skoorid
 
-See on reegli tugevuse number. Kui mitu reeglit pakuvad sama span'i jaoks erinevat muudatust, siis suurema skooriga ettepanek jääb peale. Kui skoorid on võrdsed eelistatakse pikemat. Kui ka pikkused on võrdsed, siis võeatakse vasakpoolne nimeüksus.
+Skoor näitab, milline ettepanek võidab, kui mitu reeglit pakuvad sama koha jaoks erinevat muudatust.
+
+- suurem skoor võidab
+- võrdse skoori korral eelistatakse pikemat tulemust
+- kui ka pikkus on sama, eelistatakse vasakpoolsemat tulemust
